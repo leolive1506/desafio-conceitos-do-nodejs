@@ -71,7 +71,7 @@ app.put('/todos/:id', checksExistsUserAccount, (request, response) => {
 });
 
 app.patch('/todos/:id/done', checksExistsUserAccount, (request, response) => {
-  const { user } = request
+  const { user } = request  
   const todo = user.todos.find(todo => todo.id === request.params.id)
   todo.done = true
 
@@ -79,7 +79,12 @@ app.patch('/todos/:id/done', checksExistsUserAccount, (request, response) => {
 });
 
 app.delete('/todos/:id', checksExistsUserAccount, (request, response) => {
-  // Complete aqui
+  const { user } = request
+
+  const todo = user.todos.find(todo => todo.id === request.params.id)
+  user.todos.splice(todo, 1)
+
+  return response.status(204).json({ message: 'deleted' })
 });
 
 module.exports = app;
