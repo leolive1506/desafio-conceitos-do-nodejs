@@ -22,6 +22,18 @@ function checksExistsUserAccount(request, response, next) {
   return next()
 }
 
+function checksExistsTodoById(request, response, next) {
+  const { user } = request
+  const todo = user.todos.find(todo => todo.id === request.params.id)
+  
+  if (!todo) {
+    return response.status(404).json({ error: 'todo not found' })
+  }
+
+  request.todo = todo
+  next()
+}
+
 app.post('/users', (request, response) => {
   const { name, username } = request.body
   const userAlreadyExists = users.some(user => user.username === username);
@@ -29,12 +41,12 @@ app.post('/users', (request, response) => {
   if (userAlreadyExists) {
     return response.status(400).json({ error: 'user Already exists' })
   }
+
   const user = { 
     id: uuidv4(), name, username, todos: []
   }
 
   users.push(user)
-
   return response.status(201).json(user);
 });
 
@@ -59,29 +71,24 @@ app.post('/todos', checksExistsUserAccount, (request, response) => {
   return response.status(201).json(todo)
 });
 
-app.put('/todos/:id', checksExistsUserAccount, (request, response) => {
+app.put('/todos/:id', checksExistsUserAccount, checksExistsTodoById, (request, response) => {
   const { title, deadline } = request.body
-  const { user } = request
-  const todo = user.todos.find(todo => todo.id === request.params.id)
-
+  const { user, todo } = request
+  console.log(todo)
   todo.title = title
   todo.deadline = new Date(deadline)
-
+  
   return response.status(201).json(todo)
 });
 
-app.patch('/todos/:id/done', checksExistsUserAccount, (request, response) => {
-  const { user } = request  
-  const todo = user.todos.find(todo => todo.id === request.params.id)
+app.patch('/todos/:id/done', checksExistsUserAccount, checksExistsTodoById, (request, response) => {
+  const { user, todo } = request
   todo.done = true
-
   return response.status(201).json(todo)
 });
 
-app.delete('/todos/:id', checksExistsUserAccount, (request, response) => {
-  const { user } = request
-
-  const todo = user.todos.find(todo => todo.id === request.params.id)
+app.delete('/todos/:id', checksExistsUserAccount, checksExistsTodoById, (request, response) => {
+  const { user, todo } = request
   user.todos.splice(todo, 1)
 
   return response.status(204).json({ message: 'deleted' })
